@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Manajemen & Editor RAB - CV. Hamdi Gorden Mandiri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              950: '#091526',
+              900: '#0f2342',
+              800: '#16325c',
+              700: '#1e447d',
+              600: '#2658a3',
+              50: '#f0f5fc',
+            },
+            gold: {
+              500: '#c59b27',
+              600: '#a88119',
+              100: '#fbf6e6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* A4 Paper Simulation on Screen */
+    .a4-sheet {
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      padding: 12mm 15mm;
+      background: white;
+      box-shadow: 0 20px 50px -12px rgba(15, 35, 66, 0.18);
+      margin: 0 auto;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+      transform-origin: top center;
+      transition: transform 0.2s ease;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 1280px) {
+      .a4-wrapper {
+        overflow-x: auto;
+        padding-bottom: 1.5rem;
+      }
+    }
+
+    /* Print Media Queries for Clean 1-Page A4 PDF Export */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+      html, body {
+        width: 210mm !important;
+        height: 297mm !important;
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      #workspace-grid {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .print-only-container {
+        display: block !important;
+        width: 210mm !important;
+        max-width: 210mm !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      .a4-wrapper {
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+      }
+      .a4-sheet {
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        padding: 12mm 15mm !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        transform: none !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .avoid-break {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased selection:bg-brand-800 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Bar (Typography Only - No Logo) -->
+  <header class="no-print sticky top-0 z-40 bg-brand-900 text-white border-b border-brand-800 shadow-lg">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <!-- Brand Identity (Pure Typography) -->
+      <div class="flex flex-col justify-center">
+        <div class="flex items-center gap-2.5">
+          <h1 class="font-display font-extrabold text-sm sm:text-base tracking-wide text-white uppercase">RAB MANAGER PRO</h1>
+          <span class="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded bg-brand-800 text-amber-300 border border-brand-700">
+            CV. HAMDI GORDEN MANDIRI
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-300 hidden md:block">Sistem Penyusunan & Manajemen Rancangan Anggaran Biaya (Format Resmi A4)</p>
+      </div>
+
+      <!-- Mode Switcher (Mobile & Desktop) -->
+      <div class="flex items-center bg-brand-950/70 p-1 rounded-xl border border-brand-800">
+        <button onclick="setViewMode('split')" id="btn-mode-split" class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-brand-700 text-white shadow">
+          <i class="fa-solid fa-columns"></i> Split View
+        </button>
+        <button onclick="setViewMode('editor')" id="btn-mode-editor" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-300 hover:text-white">
+          <i class="fa-solid fa-pen-to-square"></i> Kelola Data
+        </button>
+        <button onclick="setViewMode('preview')" id="btn-mode-preview" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-300 hover:text-white">
+          <i class="fa-solid fa-file-lines"></i> Pratinjau A4
+        </button>
+      </div>
+
+      <!-- Primary Actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="openProjectModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-800 hover:bg-brand-700 text-slate-100 text-xs sm:text-sm font-medium border border-brand-700 transition">
+          <i class="fa-solid fa-folder-open text-amber-400"></i>
+          <span class="hidden sm:inline">Daftar RAB</span>
+          <span id="project-count-badge" class="px-1.5 py-0.5 text-[10px] rounded-full bg-brand-950 text-amber-300 font-bold">1</span>
+        </button>
+        <button onclick="printRAB()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-emerald-950/30 transition cursor-pointer">
+          <i class="fa-solid fa-print"></i>
+          <span>Cetak / PDF A4</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Quick Summary KPI Bar -->
+  <section class="no-print bg-white border-b border-slate-200">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <!-- Active Project Selector & Quick Actions -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+          <span class="text-xs font-medium text-slate-500">Proyek Aktif:</span>
+          <select id="quick-project-select" onchange="switchProject(this.value)" class="bg-transparent text-xs sm:text-sm font-bold text-brand-900 focus:outline-none max-w-[200px] sm:max-w-[300px] truncate cursor-pointer">
+          </select>
+        </div>
+        <button onclick="createNewProject()" title="Buat RAB Baru" class="p-2 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 text-xs font-semibold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">RAB Baru</span>
+        </button>
+        <button onclick="duplicateCurrentProject()" title="Duplikat RAB Ini" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium flex items-center gap-1.5 transition">
+          <i class="fa-regular fa-copy"></i> <span class="hidden md:inline">Duplikat</span>
+        </button>
+        <button onclick="resetToBlankTemplate()" title="Kosongkan Semua Data Proyek" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-medium flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-eraser"></i> <span class="hidden lg:inline">Kosongkan Data</span>
+        </button>
+      </div>
+
+      <!-- Financial KPI Pills -->
+      <div class="flex flex-wrap items-center gap-3 sm:gap-6 text-xs">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-ruler-combined"></i>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-500">Total Bahan / Bidang</p>
+            <p class="font-bold text-slate-800"><span id="kpi-total-bahan">65,53</span> m² / <span id="kpi-total-bidang">15</span> Bidang</p>
+          </div>
+        </div>
+        <div class="h-7 w-px bg-slate-200 hidden sm:block"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-500">Grand Total RAB</p>
+            <p id="kpi-grand-total" class="font-extrabold text-sm text-brand-900">Rp 22.935.500</p>
+          </div>
+        </div>
+        <div class="h-7 w-px bg-slate-200 hidden md:block"></div>
+        <div class="hidden md:flex items-center gap-2">
+          <div id="kpi-status-badge" class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-semibold">
+            DP 1: UNPAID
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Workspace -->
+  <main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+    <div id="workspace-grid" class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT COLUMN: INTERACTIVE EDITOR PANEL -->
+      <div id="editor-panel" class="no-print xl:col-span-6 space-y-5">
+
+        <!-- Accordion / Tabs for Editor Sections -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1.5 flex flex-wrap gap-1">
+          <button onclick="scrollToSection('sec-header')" class="flex-1 min-w-[110px] py-2 px-3 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-building text-brand-700"></i> Kop & Klien
+          </button>
+          <button onclick="scrollToSection('sec-items')" class="flex-1 min-w-[110px] py-2 px-3 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-layer-group text-brand-700"></i> Rincian Barang
+          </button>
+          <button onclick="scrollToSection('sec-payment')" class="flex-1 min-w-[110px] py-2 px-3 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-money-check-dollar text-brand-700"></i> Termin & Bank
+          </button>
+        </div>
+
+        <!-- 1. Identitas Perusahaan & Informasi Proyek -->
+        <div id="sec-header" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+          <div class="bg-slate-50/80 px-5 py-3.5 border-b border-slate-200/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-brand-900 text-white flex items-center justify-center text-xs font-bold">1</span>
+              <h2 class="font-display font-bold text-sm text-brand-900">Identitas Kop Surat & Informasi Proyek</h2>
+            </div>
+            <span class="text-[11px] text-slate-400 font-medium">Auto-save aktif</span>
+          </div>
+
+          <div class="p-5 space-y-5">
+            <!-- Company Header Inputs -->
+            <div class="bg-brand-50/50 border border-brand-100 rounded-xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-brand-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-id-card"></i> Kop Surat Perusahaan
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="applyBranchPreset('lombok')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-brand-100 text-brand-900 border border-brand-200 text-[11px] font-bold transition cursor-pointer">
+                    Versi Lombok
+                  </button>
+                  <button type="button" onclick="applyBranchPreset('denpasar')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-[11px] font-bold transition cursor-pointer">
+                    Versi Denpasar
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Perusahaan</label>
+                  <input type="text" id="inp-company-name" oninput="updateField('companyName', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none font-semibold text-brand-950" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Telp / WhatsApp</label>
+                  <input type="text" id="inp-company-phone" oninput="updateField('companyPhone', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Lengkap Perusahaan</label>
+                  <input type="text" id="inp-company-address" oninput="updateField('companyAddress', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Client & Project Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Judul Pekerjaan / Proyek RAB</label>
+                <textarea id="inp-project-title" rows="2" oninput="updateField('projectTitle', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none font-medium"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Klien / Penerima</label>
+                <input type="text" id="inp-client-name" oninput="updateField('clientName', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none font-bold text-slate-800" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Ringkas (DD/MM/YYYY)</label>
+                <input type="text" id="inp-doc-number" oninput="updateField('docNumber', this.value)" placeholder="25/11/2026" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Kota / Lokasi Terbit</label>
+                <input type="text" id="inp-doc-location" oninput="updateField('docLocation', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Tanda Tangan (Lengkap)</label>
+                <input type="text" id="inp-doc-date" oninput="updateField('docDate', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Direktur / Penandatangan Perusahaan</label>
+                <input type="text" id="inp-director-name" oninput="updateField('directorName', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none font-semibold" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Rincian Item & Kelompok Barang -->
+        <div id="sec-items" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+          <div class="bg-slate-50/80 px-5 py-3.5 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-brand-900 text-white flex items-center justify-center text-xs font-bold">2</span>
+              <div>
+                <h2 class="font-display font-bold text-sm text-brand-900">Kelompok Barang & Rincian Bidang</h2>
+                <p class="text-[11px] text-slate-500">Kelola kategori tirai/gorden, ukuran bidang, total bahan & harga satuan</p>
+              </div>
+            </div>
+            <button onclick="addGroup()" class="px-3 py-1.5 rounded-xl bg-brand-900 hover:bg-brand-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition cursor-pointer">
+              <i class="fa-solid fa-folder-plus text-amber-400"></i> Tambah Kelompok
+            </button>
+          </div>
+
+          <div id="groups-editor-container" class="p-4 sm:p-5 space-y-5">
+            <!-- Dynamic Groups Rendered Here -->
+          </div>
+        </div>
+
+        <!-- 3. Termin Pembayaran, Catatan & Rekening -->
+        <div id="sec-payment" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+          <div class="bg-slate-50/80 px-5 py-3.5 border-b border-slate-200/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-brand-900 text-white flex items-center justify-center text-xs font-bold">3</span>
+              <h2 class="font-display font-bold text-sm text-brand-900">Termin Pembayaran, Catatan & Info Rekening</h2>
+            </div>
+          </div>
+
+          <div class="p-5 space-y-5">
+            <!-- Promo / Service Notes -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Layanan / Promo (Pisahkan baris dengan Enter)</label>
+              <textarea id="inp-promo-notes" rows="2" oninput="updateField('promoNotes', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-600 outline-none"></textarea>
+            </div>
+
+            <!-- Tabel Termin Pembayaran Manual -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-wider text-brand-950 block">Tabel Termin Pembayaran (DP & Pelunasan Otomatis)</span>
+                  <span class="text-[11px] text-slate-500">Isi nominal DP manual; baris Pelunasan otomatis dihitung dari Total RAB dikurangi DP</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="addRemainingBalanceTerm()" title="Tambahkan baris baru otomatis berisi sisa tagihan RAB" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> + Isi Sisa Tagihan
+                  </button>
+                  <button type="button" onclick="addPaymentTerm()" class="px-3 py-1.5 rounded-xl bg-brand-900 hover:bg-brand-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition cursor-pointer">
+                    <i class="fa-solid fa-plus text-amber-400"></i> Tambah Termin
+                  </button>
+                </div>
+              </div>
+
+              <!-- Editable Table -->
+              <div class="overflow-x-auto bg-white border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                      <th class="py-2 px-2 text-center w-8">No</th>
+                      <th class="py-2 px-2">Keterangan Termin</th>
+                      <th class="py-2 px-2 w-36">Nominal (Rp)</th>
+                      <th class="py-2 px-2 w-28">Tgl / Ket.</th>
+                      <th class="py-2 px-2 text-center w-24">Status</th>
+                      <th class="py-2 px-2 text-center w-9"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="payment-terms-editor-body" class="divide-y divide-slate-100">
+                    <!-- Dynamic Payment Term Rows Rendered Here -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Reconciliation Summary Bar -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                <div class="bg-white border border-slate-200 rounded-xl px-3 py-2">
+                  <span class="block text-[10px] text-slate-500">Total RAB Proyek</span>
+                  <span id="rec-total-rab" class="font-bold text-slate-900 tabular-nums">Rp 22.935.500</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl px-3 py-2">
+                  <span class="block text-[10px] text-slate-500">Total Terjadwal di Tabel</span>
+                  <span id="rec-total-terms" class="font-bold text-brand-900 tabular-nums">Rp 22.935.500</span>
+                </div>
+                <div id="rec-diff-box" class="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                  <span class="block text-[10px] text-slate-600">Selisih (Belum Terjadwal)</span>
+                  <span id="rec-diff-amount" class="font-extrabold text-emerald-700 tabular-nums">Rp 0 (Sesuai)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bank Account Information -->
+            <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-4 space-y-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-building-columns"></i> Informasi Rekening Pembayaran
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Bank</label>
+                  <input type="text" id="inp-bank-name" oninput="updateField('bankName', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold uppercase focus:ring-2 focus:ring-amber-500 outline-none" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor Rekening</label>
+                  <input type="text" id="inp-bank-account" oninput="updateField('bankAccount', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl font-mono font-bold focus:ring-2 focus:ring-amber-500 outline-none" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Atas Nama</label>
+                  <input type="text" id="inp-bank-holder" oninput="updateField('bankHolder', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold uppercase focus:ring-2 focus:ring-amber-500 outline-none" />
+                </div>
+                <div class="sm:col-span-3">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Keamanan Transfer</label>
+                  <input type="text" id="inp-bank-warning" oninput="updateField('bankWarning', this.value)" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl text-rose-700 font-medium focus:ring-2 focus:ring-amber-500 outline-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: LIVE A4 PROFESSIONAL DOCUMENT PREVIEW -->
+      <div id="preview-panel" class="print-only-container xl:col-span-6">
+        <div class="no-print flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Pratinjau Dokumen A4 (210 × 297 mm)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <!-- Zoom / Fit Controls -->
+            <div class="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 text-xs">
+              <button onclick="adjustZoom(-0.08)" title="Perkecil Tampilan" class="px-2 py-1 hover:bg-slate-100 rounded text-slate-600 font-bold">
+                <i class="fa-solid fa-minus text-[10px]"></i>
+              </button>
+              <button onclick="fitA4ToScreen()" id="zoom-label" title="Sesuaikan Lebar Layar" class="px-2 py-1 hover:bg-slate-100 rounded font-mono text-[11px] font-semibold text-slate-700">
+                Fit
+              </button>
+              <button onclick="adjustZoom(0.08)" title="Perbesar Tampilan" class="px-2 py-1 hover:bg-slate-100 rounded text-slate-600 font-bold">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </button>
+              <button onclick="setZoom(1)" title="Ukuran Asli 100%" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-semibold text-brand-800 border-l border-slate-200">
+                100%
+              </button>
+            </div>
+            <button onclick="exportProjectJSON()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium transition">
+              <i class="fa-solid fa-download mr-1"></i> JSON
+            </button>
+            <button onclick="printRAB()" class="text-xs px-3 py-1.5 rounded-lg bg-brand-900 hover:bg-brand-800 text-white font-semibold transition">
+              <i class="fa-solid fa-print mr-1"></i> Cetak A4
+            </button>
+          </div>
+        </div>
+
+        <div id="a4-outer-wrapper" class="a4-wrapper">
+          <!-- THE A4 SHEET (EXACT 210mm x 297mm, NO LOGO, TYPOGRAPHY ONLY) -->
+          <div id="rab-document-sheet" class="a4-sheet text-slate-900 flex flex-col justify-between">
+            <div>
+              <!-- KOP SURAT RESMI (TANPA LOGO - TIPOGRAFI MURNI KORPORAT) -->
+              <header class="text-center pb-2.5 mb-3 border-b-[3px] border-double border-brand-950">
+                <h1 id="doc-company-name" class="font-display font-extrabold text-[20px] tracking-[0.06em] text-brand-950 uppercase leading-tight">
+                  CV. HAMDI GORDEN MANDIRI
+                </h1>
+                <p id="doc-company-address" class="text-[10.5px] text-slate-700 mt-1 leading-snug">
+                  Jl. Raya Rengganis Jerneng, Mekar Terongtawah, Kec. Labuapi, Kab. Lombok Barat
+                </p>
+                <p class="text-[10.5px] font-semibold text-slate-800 mt-0.5">
+                  Telpn / WA: <span id="doc-company-phone">081803754409 / 087850157493</span>
+                </p>
+              </header>
+
+              <!-- JUDUL DOKUMEN & IDENTITAS KLIEN -->
+              <section class="mb-3">
+                <div class="text-center mb-2.5">
+                  <h2 class="font-display font-extrabold text-[13.5px] tracking-[0.05em] uppercase text-brand-950 underline decoration-brand-900 decoration-1 underline-offset-4">
+                    RINCIAN ANGGARAN BIAYA (RAB)
+                  </h2>
+                  <p id="doc-project-title" class="mt-1.5 text-[11px] font-bold text-slate-800 uppercase leading-snug max-w-[175mm] mx-auto">
+                    JASA PEMBUATAN DAN SERVICE GORDEN AN PAK HERI di VILLA SUMBAWA SEKONGKANG BARAT
+                  </p>
+                </div>
+
+                <!-- Baris Identitas Klien & Tanggal -->
+                <div class="flex items-center justify-between border-y border-slate-300 bg-slate-50/80 px-3 py-1.5 text-[10.5px]">
+                  <div>
+                    <span class="text-slate-500 font-medium">Kepada / Nama Klien:</span>
+                    <span id="doc-client-name" class="font-extrabold text-brand-950 uppercase ml-1.5 text-[11.5px]">PAK HERI</span>
+                  </div>
+                  <div class="tabular-nums">
+                    <span class="text-slate-500 font-medium">Tanggal:</span>
+                    <span id="doc-short-date-top" class="font-bold text-slate-900 ml-1">25/11/2026</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- TABEL RINCIAN ANGGARAN BIAYA (PRESISI 1 HALAMAN A4) -->
+              <section class="mb-3">
+                <table class="w-full border-collapse border border-slate-400 text-[10px] leading-tight">
+                  <thead>
+                    <tr class="bg-brand-900 text-white uppercase tracking-wider text-[9px]">
+                      <th class="py-1.5 px-1.5 text-center border border-slate-400 w-8" rowspan="2">No</th>
+                      <th class="py-1.5 px-2.5 text-left border border-slate-400" rowspan="2">Nama Barang</th>
+                      <th class="py-1 px-1.5 text-center border border-slate-400" colspan="2">Ukuran (CM)</th>
+                      <th class="py-1.5 px-1.5 text-center border border-slate-400 w-24" rowspan="2">Banyak Set / Arah</th>
+                      <th class="py-1.5 px-1.5 text-right border border-slate-400 w-16" rowspan="2">Total Bahan</th>
+                      <th class="py-1.5 px-2 text-right border border-slate-400 w-24" rowspan="2">Harga</th>
+                      <th class="py-1.5 px-2 text-right border border-slate-400 w-28" rowspan="2">Total Harga</th>
+                    </tr>
+                    <tr class="bg-brand-800 text-slate-100 text-[8.5px]">
+                      <th class="py-1 px-1 text-center border border-slate-400 w-14">Panjang</th>
+                      <th class="py-1 px-1 text-center border border-slate-400 w-14">Lebar</th>
+                    </tr>
+                  </thead>
+                  <tbody id="doc-table-body">
+                    <!-- Rendered Dynamically -->
+                  </tbody>
+                  <tfoot>
+                    <tr class="bg-brand-900 text-white font-bold">
+                      <td colspan="5" class="py-2 px-2.5 text-right uppercase tracking-wider text-[10px] border border-slate-400">
+                        JUMLAH TOTAL
+                      </td>
+                      <td id="doc-footer-total-bahan" class="py-2 px-1.5 text-right tabular-nums text-[10px] text-amber-300 border border-slate-400">
+                        0,00
+                      </td>
+                      <td class="py-2 px-2 text-right text-[9px] text-slate-300 border border-slate-400">
+                        Total Keseluruhan
+                      </td>
+                      <td id="doc-footer-grand-total" class="py-2 px-2 text-right font-display font-extrabold text-[11px] text-amber-300 tabular-nums border border-slate-400 whitespace-nowrap">
+                        Rp 0
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+
+                <!-- Kontrol Jumlah Total Keseluruhan Manual (Hanya Tampil di Editor/Web, Tidak Dicetak) -->
+                <div class="no-print mt-3 bg-brand-50/80 border border-brand-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-brand-950 uppercase text-[11px]">Jumlah Total Keseluruhan (Rp):</span>
+                    <button type="button" id="btn-reset-grand-total" onclick="resetManualGrandTotal()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Mode Otomatis
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="number" id="inp-manual-grand-total" step="1000" placeholder="Otomatis"
+                      oninput="updateManualGrandTotal(this.value)"
+                      class="w-40 px-2.5 py-1 text-xs bg-white border border-brand-300 rounded-lg text-right font-extrabold text-brand-950 tabular-nums focus:ring-2 focus:ring-brand-600 outline-none" />
+                  </div>
+                </div>
+              </section>
+
+              <!-- BAGIAN BAWAH SIMETRIS: CATATAN, INFO BANK & TERMIN PEMBAYARAN -->
+              <section class="avoid-break grid grid-cols-12 gap-3.5 items-stretch">
+                <!-- Kolom Kiri: Catatan Promo & Kotak Informasi Pembayaran Bank -->
+                <div class="col-span-6 flex flex-col justify-between gap-2">
+                  <!-- Catatan Gratis Pengukuran & Pemasangan -->
+                  <div id="doc-promo-notes" class="text-[10px] font-semibold text-slate-800 bg-slate-50 border border-slate-300 px-3 py-1.5 leading-snug">
+                    <p>*Gratis Biaya Pengukuran dan Pemasangan</p>
+                  </div>
+
+                  <!-- Kotak Informasi Rekening Pembayaran -->
+                  <div class="border border-slate-400 bg-slate-50/70 p-2.5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between border-b border-slate-300 pb-1 mb-1.5">
+                        <span class="text-[9.5px] font-extrabold uppercase tracking-wider text-brand-950">
+                          Informasi Pembayaran
+                        </span>
+                        <span id="doc-bank-date" class="text-[9.5px] font-semibold text-slate-600 tabular-nums">
+                          25/11/2026
+                        </span>
+                      </div>
+                      <p id="doc-bank-warning" class="text-[9.5px] font-semibold text-rose-700 italic mb-1.5">
+                        *pembayaran hanya menggunakan nama HAMDI
+                      </p>
+                      <div class="space-y-0.5 text-[10px]">
+                        <div class="flex items-center justify-between">
+                          <span class="text-slate-600">Bank Transfer:</span>
+                          <span id="doc-bank-name" class="font-extrabold text-brand-950 uppercase">BANK MANDIRI</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-slate-600">No. Rekening:</span>
+                          <span id="doc-bank-account" class="font-bold text-[11px] text-slate-950 tabular-nums tracking-wide">1610002727746</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-slate-600">Atas Nama:</span>
+                          <span id="doc-bank-holder" class="font-extrabold text-brand-950 uppercase">AN. HAMDI</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Kolom Kanan: Tabel Termin Pembayaran Manual -->
+                <div class="col-span-6">
+                  <table class="w-full h-full border-collapse border border-slate-400 text-[9.5px]">
+                    <thead>
+                      <tr class="bg-slate-200 text-slate-800 uppercase text-[8.5px] font-extrabold tracking-wider">
+                        <th class="py-1.5 px-2 text-left border border-slate-400">Termin Pembayaran</th>
+                        <th class="py-1.5 px-2 text-right border border-slate-400">Nominal</th>
+                        <th class="py-1.5 px-1.5 text-center border border-slate-400 w-16">Tgl / Ket</th>
+                        <th class="py-1.5 px-1.5 text-center border border-slate-400 w-16">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="doc-payment-terms-body">
+                      <!-- Rendered Dynamically from Manual Payment Terms -->
+                    </tbody>
+                    <tfoot id="doc-payment-terms-foot">
+                      <tr class="bg-slate-100 font-bold">
+                        <td class="py-1.5 px-2 text-slate-700 border border-slate-400 text-[9px]">TOTAL TERMIN</td>
+                        <td id="doc-termin-total" colspan="3" class="py-1.5 px-2 text-right font-extrabold text-brand-950 tabular-nums border border-slate-400 text-[10px]">
+                          Rp 22.935.500
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <!-- AREA TANDA TANGAN RESMI DI BAGIAN BAWAH HALAMAN A4 -->
+            <footer class="avoid-break pt-3 mt-auto">
+              <div class="grid grid-cols-2 gap-12 text-center text-[10.5px]">
+                <!-- Tanda Tangan Kiri: PENERIMA -->
+                <div class="flex flex-col items-center justify-between min-h-[88px]">
+                  <div>
+                    <p class="text-[10px] text-transparent select-none">.</p>
+                    <p class="font-extrabold text-slate-800 uppercase tracking-wider">PENERIMA</p>
+                  </div>
+                  <div class="w-44 border-b border-slate-900 pb-0.5">
+                    <p id="doc-sig-client" class="font-extrabold text-slate-950 uppercase tracking-wide">PAK HERI</p>
+                  </div>
+                </div>
+
+                <!-- Tanda Tangan Kanan: DIREKTUR -->
+                <div class="flex flex-col items-center justify-between min-h-[88px]">
+                  <div>
+                    <p class="text-[10px] font-medium text-slate-800">
+                      <span id="doc-sig-location">Lombok</span>, <span id="doc-sig-date">25 NOVEMBER 2026</span>
+                    </p>
+                    <p class="font-extrabold text-brand-950 uppercase tracking-wider">DIREKTUR</p>
+                  </div>
+                  <div class="w-44 border-b border-brand-950 pb-0.5">
+                    <p id="doc-sig-director" class="font-extrabold text-brand-950 uppercase tracking-wide">HAMDI</p>
+                  </div>
+                </div>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL: DAFTAR PROYEK RAB (PROJECT MANAGER) -->
+  <div id="project-modal" class="no-print fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-fade-in">
+      <div class="bg-brand-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-folder-tree text-amber-400"></i>
+          <h3 class="font-display font-bold text-base">Daftar Proyek & Arsip RAB</h3>
+        </div>
+        <button onclick="closeProjectModal()" class="w-8 h-8 rounded-lg bg-brand-800 hover:bg-brand-700 text-slate-200 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <button onclick="createNewProject(); closeProjectModal();" class="px-4 py-2 rounded-xl bg-brand-900 hover:bg-brand-800 text-white text-xs font-semibold flex items-center gap-2 transition">
+            <i class="fa-solid fa-plus text-amber-400"></i> Buat Proyek RAB Baru
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button onclick="exportAllProjectsJSON()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-export"></i> Export Semua (JSON)
+            </button>
+            <label class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+              <i class="fa-solid fa-file-import"></i> Import JSON
+              <input type="file" accept=".json" onchange="importProjectsJSON(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <div id="project-list-container" class="max-h-[360px] overflow-y-auto divide-y divide-slate-200 border border-slate-200 rounded-xl">
+          <!-- Rendered Dynamically -->
+        </div>
+      </div>
+
+      <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+        <button onclick="closeProjectModal()" class="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. DEFAULT BLANK TEMPLATE & 2 BRANCH ADDRESS PRESETS (LOMBOK & DENPASAR)
+    // =========================================================================
+    const STORAGE_KEY = 'hgm_rab_projects_per_bidang_v6';
+    const ACTIVE_ID_KEY = 'hgm_rab_active_id_per_bidang_v6';
+
+    const BRANCH_PRESETS = {
+      lombok: {
+        label: 'Lombok',
+        companyName: 'CV. HAMDI GORDEN MANDIRI',
+        companyAddress: 'Jl. Raya Rengganis Jerneng, Mekar Terongtawah, Kec. Labuapi, Kab. Lombok Barat',
+        companyPhone: '081803754409 / 087850157493',
+        docLocation: 'Lombok'
+      },
+      denpasar: {
+        label: 'Denpasar',
+        companyName: 'CV. HAMDI GORDEN MANDIRI',
+        companyAddress: 'Jl. Gatot Subroto VI, Gang Arya No.3, Denpasar Utara, Denpasar, Bali',
+        companyPhone: '081803754409 / 087850157493',
+        docLocation: 'Denpasar'
+      }
+    };
+
+    function getBlankCompanyProject(branchKey = 'lombok') {
+      const now = Date.now();
+      const preset = BRANCH_PRESETS[branchKey] || BRANCH_PRESETS.lombok;
+      return {
+        id: 'proj-hgm-' + now + '-' + branchKey,
+        branch: branchKey,
+        updatedAt: new Date().toISOString(),
+        companyName: preset.companyName,
+        companyAddress: preset.companyAddress,
+        companyPhone: preset.companyPhone,
+        docNumber: '',
+        projectTitle: '',
+        clientName: '',
+        docLocation: '',
+        docDate: '',
+        directorName: 'HAMDI',
+        promoNotes: '*Gratis Biaya Pengukuran dan Pemasangan',
+        manualGrandTotal: null,
+        paymentTerms: [
+          {
+            id: 'term-' + now + '-1',
+            label: 'DP 1',
+            amount: 0,
+            manualAmountOverride: true,
+            note: '',
+            status: 'UNPAID'
+          },
+          {
+            id: 'term-' + now + '-2',
+            label: 'PELUNASAN',
+            amount: 0,
+            manualAmountOverride: false,
+            note: '',
+            status: 'UNPAID'
+          }
+        ],
+        bankName: 'BANK MANDIRI',
+        bankAccount: '1610002727746',
+        bankHolder: 'AN. HAMDI',
+        bankWarning: '*pembayaran hanya menggunakan nama HAMDI',
+        groups: [
+          {
+            id: 'grp-' + now,
+            categoryName: '',
+            manualSubtotal: null,
+            items: [
+              {
+                id: 'itm-' + now + '-1',
+                name: '',
+                jenisGorden: '',
+                panjang: '',
+                lebar: '',
+                ket: '',
+                totalBahan: 0,
+                manualBahanOverride: false,
+                unitPrice: 0,
+                subtotal: 0,
+                manualSubtotalOverride: false
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    function applyBranchPreset(branchKey) {
+      const preset = BRANCH_PRESETS[branchKey];
+      if (!preset) return;
+      const proj = getActiveProject();
+      proj.branch = branchKey;
+      proj.companyName = preset.companyName;
+      proj.companyAddress = preset.companyAddress;
+      proj.companyPhone = preset.companyPhone;
+      if (!proj.docLocation) {
+        proj.docLocation = preset.docLocation;
+      }
+      proj.updatedAt = new Date().toISOString();
+      const totals = calculateTotals(proj);
+      saveState();
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+      showToast(`Alamat & identitas diubah ke versi ${preset.label}.`);
+    }
+
+    function createBranchProject(branchKey) {
+      const preset = BRANCH_PRESETS[branchKey] || BRANCH_PRESETS.lombok;
+      const proj = getBlankCompanyProject(branchKey);
+      proj.projectTitle = `RAB (${preset.label.toUpperCase()})`;
+      state.projects.unshift(proj);
+      state.activeId = proj.id;
+      saveState();
+      renderAll();
+      showToast(`RAB baru versi ${preset.label} dibuat.`);
+    }
+
+    // =========================================================================
+    // 2. APPLICATION STATE & STORAGE HELPERS
+    // =========================================================================
+    let state = {
+      projects: [],
+      activeId: null
+    };
+
+    function initState() {
+      try {
+        const rawProjects = localStorage.getItem(STORAGE_KEY);
+        const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
+        let parsed = rawProjects ? JSON.parse(rawProjects) : null;
+
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          const projLombok = getBlankCompanyProject('lombok');
+          const projDenpasar = getBlankCompanyProject('denpasar');
+          parsed = [projLombok, projDenpasar];
+          state.activeId = projLombok.id;
+        } else {
+          state.activeId = parsed.some(p => p.id === savedActiveId) ? savedActiveId : parsed[0].id;
+        }
+
+        state.projects = parsed;
+        saveState();
+      } catch (err) {
+        console.error('Failed to load state from localStorage:', err);
+        const fallback = getBlankCompanyProject('lombok');
+        state.projects = [fallback];
+        state.activeId = fallback.id;
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.projects));
+        if (state.activeId) {
+          localStorage.setItem(ACTIVE_ID_KEY, state.activeId);
+        }
+      } catch (err) {
+        console.error('Failed to save state:', err);
+      }
+    }
+
+    function getActiveProject() {
+      const found = state.projects.find(p => p.id === state.activeId);
+      if (found) return found;
+      return state.projects[0];
+    }
+
+    // =========================================================================
+    // 3. FORMATTING & CALCULATION ENGINE (PELUNASAN OTOMATIS = TOTAL - DP)
+    // =========================================================================
+    function formatRupiah(num) {
+      const n = Number(num) || 0;
+      return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+    }
+
+    function formatDecimalID(num) {
+      const n = Number(num) || 0;
+      return n.toLocaleString('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function isSettlementTerm(term) {
+      const lbl = String(term?.label || '').trim().toUpperCase();
+      return lbl.includes('PELUNASAN') || lbl.includes('SISA');
+    }
+
+    function syncPaymentTermsCalculation(proj, grandTotal) {
+      const terms = proj.paymentTerms || [];
+      let nonSettlementSum = 0;
+
+      terms.forEach(term => {
+        if (term.manualAmountOverride === undefined) {
+          term.manualAmountOverride = !isSettlementTerm(term);
+        }
+        if (!isSettlementTerm(term) || term.manualAmountOverride) {
+          nonSettlementSum += Number(term.amount) || 0;
+        }
+      });
+
+      const remaining = Math.max(0, Math.round(grandTotal - nonSettlementSum));
+      terms.forEach(term => {
+        if (isSettlementTerm(term) && !term.manualAmountOverride) {
+          term.amount = remaining;
+        }
+      });
+
+      return terms.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    }
+
+    function computeItemBahan(item) {
+      if (item.manualBahanOverride) {
+        return Number(item.totalBahan) || 0;
+      }
+      const p = parseFloat(item.panjang) || 0;
+      const l = parseFloat(item.lebar) || 0;
+      return Number(((p * l) / 10000).toFixed(2));
+    }
+
+    function computeItemSubtotal(item) {
+      const bahan = computeItemBahan(item);
+      if (item.manualSubtotalOverride) {
+        return Number(item.subtotal) || 0;
+      }
+      const price = parseFloat(item.unitPrice) || 0;
+      return Math.round(bahan * price);
+    }
+
+    function computeGroupSubtotal(group) {
+      if (group.manualSubtotal !== null && group.manualSubtotal !== undefined && group.manualSubtotal !== '') {
+        return Number(group.manualSubtotal) || 0;
+      }
+      return (group.items || []).reduce((sum, item) => sum + computeItemSubtotal(item), 0);
+    }
+
+    function calculateTotals(proj) {
+      let totalBahan = 0;
+      let totalBidang = 0;
+      let computedGrandTotal = 0;
+
+      (proj.groups || []).forEach(grp => {
+        (grp.items || []).forEach(itm => {
+          totalBahan += computeItemBahan(itm);
+          totalBidang += 1;
+        });
+        computedGrandTotal += computeGroupSubtotal(grp);
+      });
+
+      const hasManualGrand = proj.manualGrandTotal !== null && proj.manualGrandTotal !== undefined && proj.manualGrandTotal !== '';
+      const grandTotal = hasManualGrand ? (Number(proj.manualGrandTotal) || 0) : computedGrandTotal;
+
+      const totalTerms = syncPaymentTermsCalculation(proj, grandTotal);
+      const diff = grandTotal - totalTerms;
+
+      return {
+        totalBahan: Number(totalBahan.toFixed(2)),
+        totalBidang,
+        computedGrandTotal,
+        hasManualGrand,
+        grandTotal,
+        totalTerms,
+        diff
+      };
+    }
+
+    // =========================================================================
+    // 4. MASTER RENDERING & FORM SYNCHRONIZATION
+    // =========================================================================
+    function renderAll() {
+      const proj = getActiveProject();
+      if (!proj) return;
+      const totals = calculateTotals(proj);
+
+      renderProjectSelector(proj);
+      renderKPIs(proj, totals);
+      syncFormInputs(proj, totals);
+      renderGroupsEditor(proj);
+      renderPaymentTermsEditor(proj, totals);
+      renderDocumentPreview(proj, totals);
+      applyZoom();
+    }
+
+    function renderProjectSelector(proj) {
+      const select = document.getElementById('quick-project-select');
+      const badge = document.getElementById('project-count-badge');
+      if (badge) badge.textContent = String(state.projects.length);
+      if (!select) return;
+
+      select.innerHTML = state.projects.map(p => {
+        const branchTag = (p.companyAddress || '').toLowerCase().includes('denpasar') ? '[Denpasar]' : '[Lombok]';
+        const label = p.projectTitle || p.clientName || `RAB Baru ${branchTag}`;
+        return `<option value="${escapeHTML(p.id)}" ${p.id === proj.id ? 'selected' : ''}>${escapeHTML(branchTag + ' ' + label)}</option>`;
+      }).join('');
+    }
+
+    function renderKPIs(proj, totals) {
+      document.getElementById('kpi-total-bahan').textContent = formatDecimalID(totals.totalBahan);
+      document.getElementById('kpi-total-bidang').textContent = String(totals.totalBidang);
+      document.getElementById('kpi-grand-total').textContent = formatRupiah(totals.grandTotal);
+
+      const badge = document.getElementById('kpi-status-badge');
+      const terms = proj.paymentTerms || [];
+      if (terms.length === 0) {
+        badge.className = 'px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 font-semibold';
+        badge.textContent = 'TERMIN: KOSONG';
+      } else {
+        const first = terms[0];
+        const isPaid = first.status === 'PAID';
+        badge.className = isPaid
+          ? 'px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold'
+          : 'px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-semibold';
+        badge.textContent = `${(first.label || 'TERMIN 1').toUpperCase()}: ${first.status || 'UNPAID'}`;
+      }
+    }
+
+    function syncFormInputs(proj, totals) {
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) {
+          el.value = val ?? '';
+        }
+      };
+
+      setVal('inp-company-name', proj.companyName);
+      setVal('inp-company-phone', proj.companyPhone);
+      setVal('inp-company-address', proj.companyAddress);
+      setVal('inp-project-title', proj.projectTitle);
+      setVal('inp-client-name', proj.clientName);
+      setVal('inp-doc-number', proj.docNumber);
+      setVal('inp-doc-location', proj.docLocation);
+      setVal('inp-doc-date', proj.docDate);
+      setVal('inp-director-name', proj.directorName);
+      setVal('inp-promo-notes', proj.promoNotes);
+      setVal('inp-bank-name', proj.bankName);
+      setVal('inp-bank-account', proj.bankAccount);
+      setVal('inp-bank-holder', proj.bankHolder);
+      setVal('inp-bank-warning', proj.bankWarning);
+
+      const manualGrandEl = document.getElementById('inp-manual-grand-total');
+      const resetGrandBtn = document.getElementById('btn-reset-grand-total');
+      if (manualGrandEl && document.activeElement !== manualGrandEl) {
+        manualGrandEl.value = totals.hasManualGrand ? proj.manualGrandTotal : '';
+        manualGrandEl.placeholder = String(totals.computedGrandTotal);
+      }
+      if (resetGrandBtn) {
+        if (totals.hasManualGrand) {
+          resetGrandBtn.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer';
+          resetGrandBtn.textContent = 'Manual (Klik untuk Auto)';
+        } else {
+          resetGrandBtn.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+          resetGrandBtn.textContent = 'Mode Otomatis';
+        }
+      }
+    }
+
+    function updateField(field, value) {
+      const proj = getActiveProject();
+      proj[field] = value;
+      proj.updatedAt = new Date().toISOString();
+      const totals = calculateTotals(proj);
+      saveState();
+      renderProjectSelector(proj);
+      renderKPIs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updateManualGrandTotal(val) {
+      const proj = getActiveProject();
+      proj.manualGrandTotal = val === '' ? null : (parseFloat(val) || 0);
+      const totals = calculateTotals(proj);
+      saveState();
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      renderDocumentPreview(proj, totals);
+      const resetBtn = document.getElementById('btn-reset-grand-total');
+      if (resetBtn) {
+        if (totals.hasManualGrand) {
+          resetBtn.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer';
+          resetBtn.textContent = 'Manual (Klik untuk Auto)';
+        } else {
+          resetBtn.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+          resetBtn.textContent = 'Mode Otomatis';
+        }
+      }
+    }
+
+    function resetManualGrandTotal() {
+      const proj = getActiveProject();
+      proj.manualGrandTotal = null;
+      saveState();
+      renderAll();
+    }
+
+    // =========================================================================
+    // 5. GROUPS & ITEMS EDITOR (PER-BIDANG)
+    // =========================================================================
+    function renderGroupsEditor(proj) {
+      const container = document.getElementById('groups-editor-container');
+      const groups = proj.groups || [];
+
+      container.innerHTML = groups.map((grp, gIdx) => {
+        const groupSub = computeGroupSubtotal(grp);
+        const hasManualGrpSub = grp.manualSubtotal !== null && grp.manualSubtotal !== undefined && grp.manualSubtotal !== '';
+
+        return `
+          <div class="border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden">
+            <div class="bg-slate-100/90 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 flex-1">
+                <span class="text-xs font-extrabold text-brand-900 bg-white border border-slate-300 px-2 py-0.5 rounded-lg">
+                  Kelompok ${gIdx + 1}
+                </span>
+                <input type="text" placeholder="Nama Kategori / Kelompok (Contoh: TIRAI PLASTIK BENING)"
+                  value="${escapeHTML(grp.categoryName)}"
+                  oninput="updateGroupCategory(${gIdx}, this.value)"
+                  class="flex-1 px-2.5 py-1 text-xs font-bold bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
+              </div>
+              <button type="button" onclick="removeGroup(${gIdx})" title="Hapus Kelompok"
+                class="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-100 text-xs font-semibold transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+
+            <div class="p-3.5 space-y-3">
+              ${(grp.items || []).map((itm, iIdx) => {
+                const bahan = computeItemBahan(itm);
+                const sub = computeItemSubtotal(itm);
+                return `
+                  <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-2.5 shadow-2xs">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-[11px] font-bold text-slate-500">Bidang #${iIdx + 1}</span>
+                      <button type="button" onclick="removeItem(${gIdx}, ${iIdx})" class="text-xs text-rose-500 hover:text-rose-700 font-medium">
+                        <i class="fa-solid fa-xmark mr-1"></i>Hapus
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Nama Bidang / Lokasi</label>
+                        <input type="text" placeholder="Contoh: BIDANG 1-01" value="${escapeHTML(itm.name)}"
+                          oninput="updateItemField(${gIdx}, ${iIdx}, 'name', this.value)"
+                          class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg font-semibold focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Jenis Gorden / Bahan Bidang Ini</label>
+                        <input type="text" placeholder="Contoh: Blackout / Tirai Plastik" value="${escapeHTML(itm.jenisGorden)}"
+                          oninput="updateItemField(${gIdx}, ${iIdx}, 'jenisGorden', this.value)"
+                          class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Panjang (CM)</label>
+                        <input type="text" inputmode="decimal" placeholder="0" value="${escapeHTML(itm.panjang)}"
+                          data-dim-input="panjang-${gIdx}-${iIdx}"
+                          oninput="updateItemDimension(${gIdx}, ${iIdx}, 'panjang', this.value)"
+                          class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg tabular-nums focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Lebar (CM)</label>
+                        <input type="text" inputmode="decimal" placeholder="0" value="${escapeHTML(itm.lebar)}"
+                          data-dim-input="lebar-${gIdx}-${iIdx}"
+                          oninput="updateItemDimension(${gIdx}, ${iIdx}, 'lebar', this.value)"
+                          class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg tabular-nums focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Set / Arah</label>
+                        <input type="text" placeholder="KANAN / KIRI" value="${escapeHTML(itm.ket)}"
+                          oninput="updateItemField(${gIdx}, ${iIdx}, 'ket', this.value)"
+                          class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg uppercase focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                      <div>
+                        <div class="flex items-center justify-between mb-0.5">
+                          <label class="text-[10px] font-semibold text-slate-500">Bahan (m²)</label>
+                          ${itm.manualBahanOverride
+                            ? `<button type="button" onclick="resetItemBahan(${gIdx}, ${iIdx})" class="text-[9px] font-bold text-amber-700 underline">Auto</button>`
+                            : `<span class="text-[9px] text-emerald-700 font-semibold">Auto</span>`
+                          }
+                        </div>
+                        <input type="text" inputmode="decimal" data-bahan-input="${gIdx}-${iIdx}" value="${bahan ? escapeHTML(String(bahan)) : ''}" placeholder="0,00"
+                          oninput="updateItemManualBahan(${gIdx}, ${iIdx}, this.value)"
+                          class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg font-bold tabular-nums text-right focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                      <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Harga Satuan (Rp / m²)</label>
+                        <input type="text" inputmode="numeric" placeholder="0" value="${itm.unitPrice ? escapeHTML(String(itm.unitPrice)) : ''}"
+                          oninput="updateItemPrice(${gIdx}, ${iIdx}, this.value)"
+                          class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg font-semibold tabular-nums text-right focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                      <div>
+                        <div class="flex items-center justify-between mb-0.5">
+                          <label class="text-[10px] font-semibold text-slate-500">Total Harga Bidang (Rp)</label>
+                          ${itm.manualSubtotalOverride
+                            ? `<button type="button" onclick="resetItemSubtotal(${gIdx}, ${iIdx})" class="text-[9px] font-bold text-amber-700 underline">Reset Auto</button>`
+                            : `<span class="text-[9px] text-slate-400">Otomatis</span>`
+                          }
+                        </div>
+                        <input type="text" inputmode="numeric" data-subtotal-input="${gIdx}-${iIdx}" value="${sub ? escapeHTML(String(sub)) : ''}" placeholder="0"
+                          oninput="updateItemManualSubtotal(${gIdx}, ${iIdx}, this.value)"
+                          class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg font-extrabold text-brand-950 tabular-nums text-right focus:ring-2 focus:ring-brand-600 outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <button type="button" onclick="addItem(${gIdx})"
+                  class="px-3 py-1.5 rounded-xl bg-white hover:bg-brand-50 text-brand-900 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+                  <i class="fa-solid fa-plus text-xs"></i> Tambah Bidang
+                </button>
+
+                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5">
+                  <span class="text-[11px] font-bold text-slate-600">Subtotal Kelompok:</span>
+                  <input type="text" inputmode="numeric" data-group-subtotal-input="${gIdx}" value="${groupSub ? escapeHTML(String(groupSub)) : ''}" placeholder="0"
+                    oninput="updateGroupManualSubtotal(${gIdx}, this.value)"
+                    class="w-28 px-2 py-0.5 text-xs font-extrabold text-brand-950 border border-slate-300 rounded-lg text-right tabular-nums focus:ring-2 focus:ring-brand-600 outline-none" />
+                  ${hasManualGrpSub
+                    ? `<button type="button" onclick="resetGroupManualSubtotal(${gIdx})" class="text-[10px] font-bold text-amber-700 underline">Auto</button>`
+                    : ''
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addGroup() {
+      const proj = getActiveProject();
+      const now = Date.now();
+      proj.groups.push({
+        id: 'grp-' + now,
+        categoryName: '',
+        manualSubtotal: null,
+        items: [
+          {
+            id: 'itm-' + now + '-1',
+            name: '',
+            jenisGorden: '',
+            panjang: '',
+            lebar: '',
+            ket: '',
+            totalBahan: 0,
+            manualBahanOverride: false,
+            unitPrice: 0,
+            subtotal: 0,
+            manualSubtotalOverride: false
+          }
+        ]
+      });
+      saveState();
+      renderAll();
+    }
+
+    function removeGroup(gIdx) {
+      const proj = getActiveProject();
+      if (proj.groups.length <= 1) {
+        showToast('Minimal harus ada 1 kelompok barang.', 'error');
+        return;
+      }
+      proj.groups.splice(gIdx, 1);
+      saveState();
+      renderAll();
+    }
+
+    function updateGroupCategory(gIdx, val) {
+      const proj = getActiveProject();
+      proj.groups[gIdx].categoryName = val;
+      const totals = calculateTotals(proj);
+      saveState();
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updateGroupManualSubtotal(gIdx, val) {
+      const proj = getActiveProject();
+      const cleaned = sanitizeNumericInput(val);
+      proj.groups[gIdx].manualSubtotal = cleaned === '' ? null : (parseFloat(cleaned) || 0);
+      const totals = calculateTotals(proj);
+      saveState();
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function resetGroupManualSubtotal(gIdx) {
+      const proj = getActiveProject();
+      proj.groups[gIdx].manualSubtotal = null;
+      saveState();
+      renderAll();
+    }
+
+    function sanitizeNumericInput(val) {
+      if (val === null || val === undefined) return '';
+      const normalized = String(val).replace(/,/g, '.').replace(/[^0-9.]/g, '');
+      const parts = normalized.split('.');
+      if (parts.length > 2) {
+        return parts[0] + '.' + parts.slice(1).join('');
+      }
+      return normalized;
+    }
+
+    function syncCalculatedItemFields(gIdx, iIdx, itm, proj) {
+      const bahan = computeItemBahan(itm);
+      const sub = computeItemSubtotal(itm);
+      const bahanEl = document.querySelector(`[data-bahan-input="${gIdx}-${iIdx}"]`);
+      if (bahanEl && document.activeElement !== bahanEl) {
+        bahanEl.value = bahan ? String(bahan) : '';
+      }
+      const subEl = document.querySelector(`[data-subtotal-input="${gIdx}-${iIdx}"]`);
+      if (subEl && document.activeElement !== subEl) {
+        subEl.value = sub ? String(sub) : '';
+      }
+      const grpSub = computeGroupSubtotal(proj.groups[gIdx]);
+      const grpSubEl = document.querySelector(`[data-group-subtotal-input="${gIdx}"]`);
+      if (grpSubEl && document.activeElement !== grpSubEl) {
+        grpSubEl.value = grpSub ? String(grpSub) : '';
+      }
+    }
+
+    function addItem(gIdx) {
+      const proj = getActiveProject();
+      proj.groups[gIdx].items.push({
+        id: 'itm-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        name: '',
+        jenisGorden: '',
+        panjang: '',
+        lebar: '',
+        ket: '',
+        totalBahan: 0,
+        manualBahanOverride: false,
+        unitPrice: 0,
+        subtotal: 0,
+        manualSubtotalOverride: false
+      });
+      saveState();
+      renderAll();
+    }
+
+    function removeItem(gIdx, iIdx) {
+      const proj = getActiveProject();
+      proj.groups[gIdx].items.splice(iIdx, 1);
+      saveState();
+      renderAll();
+    }
+
+    function updateItemField(gIdx, iIdx, field, val) {
+      const proj = getActiveProject();
+      proj.groups[gIdx].items[iIdx][field] = val;
+      const totals = calculateTotals(proj);
+      saveState();
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updateItemDimension(gIdx, iIdx, field, val) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      const cleaned = sanitizeNumericInput(val);
+      itm[field] = cleaned;
+      itm.manualBahanOverride = false;
+      itm.manualSubtotalOverride = false;
+      itm.totalBahan = computeItemBahan(itm);
+      itm.subtotal = computeItemSubtotal(itm);
+
+      const totals = calculateTotals(proj);
+      saveState();
+      syncCalculatedItemFields(gIdx, iIdx, itm, proj);
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updateItemManualBahan(gIdx, iIdx, val) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      const cleaned = sanitizeNumericInput(val);
+      itm.manualBahanOverride = cleaned !== '';
+      itm.totalBahan = parseFloat(cleaned) || 0;
+      itm.manualSubtotalOverride = false;
+      itm.subtotal = computeItemSubtotal(itm);
+
+      const totals = calculateTotals(proj);
+      saveState();
+      syncCalculatedItemFields(gIdx, iIdx, itm, proj);
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function resetItemBahan(gIdx, iIdx) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      itm.manualBahanOverride = false;
+      itm.totalBahan = computeItemBahan(itm);
+      itm.subtotal = computeItemSubtotal(itm);
+      saveState();
+      renderAll();
+    }
+
+    function updateItemPrice(gIdx, iIdx, val) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      const cleaned = sanitizeNumericInput(val);
+      itm.unitPrice = parseFloat(cleaned) || 0;
+      itm.manualSubtotalOverride = false;
+      itm.subtotal = computeItemSubtotal(itm);
+
+      const totals = calculateTotals(proj);
+      saveState();
+      syncCalculatedItemFields(gIdx, iIdx, itm, proj);
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updateItemManualSubtotal(gIdx, iIdx, val) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      const cleaned = sanitizeNumericInput(val);
+      itm.manualSubtotalOverride = cleaned !== '';
+      itm.subtotal = parseFloat(cleaned) || 0;
+
+      const totals = calculateTotals(proj);
+      saveState();
+      syncCalculatedItemFields(gIdx, iIdx, itm, proj);
+      renderKPIs(proj, totals);
+      updatePaymentTermsSummaryOnly(totals);
+      syncFormInputs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function resetItemSubtotal(gIdx, iIdx) {
+      const proj = getActiveProject();
+      const itm = proj.groups[gIdx].items[iIdx];
+      itm.manualSubtotalOverride = false;
+      itm.subtotal = computeItemSubtotal(itm);
+      saveState();
+      renderAll();
+    }
+
+    // =========================================================================
+    // 6. PAYMENT TERMS EDITOR & A4 DOCUMENT RENDERER
+    // =========================================================================
+    function renderPaymentTermsEditor(proj, totals) {
+      const tbody = document.getElementById('payment-terms-editor-body');
+      const terms = proj.paymentTerms || [];
+
+      if (terms.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-4 px-3 text-center text-xs text-slate-400 italic">
+              Belum ada baris termin. Klik "+ Tambah Termin" untuk mengisi DP / Pelunasan secara manual.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = terms.map((term, idx) => {
+          const isPaid = term.status === 'PAID';
+          const isAutoSettlement = isSettlementTerm(term) && !term.manualAmountOverride;
+          return `
+            <tr class="hover:bg-slate-50/80">
+              <td class="py-1.5 px-2 text-center text-xs font-bold text-slate-500">${idx + 1}</td>
+              <td class="py-1.5 px-2">
+                <input type="text" placeholder="Contoh: DP 1 / PELUNASAN" value="${escapeHTML(term.label)}"
+                  oninput="updatePaymentTermLabel(${idx}, this.value)"
+                  class="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded-lg font-bold uppercase focus:ring-2 focus:ring-brand-600 outline-none" />
+              </td>
+              <td class="py-1.5 px-2">
+                <div class="relative">
+                  <input type="number" step="1000" placeholder="0" data-term-amount="${idx}" value="${term.amount || ''}"
+                    oninput="updatePaymentTermNumber(${idx}, 'amount', this.value)"
+                    class="w-full px-2 py-1 text-xs ${isAutoSettlement ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950' : 'bg-white border-slate-300 text-slate-900'} border rounded-lg font-bold tabular-nums text-right focus:ring-2 focus:ring-brand-600 outline-none" />
+                </div>
+                <div class="flex items-center justify-between mt-0.5 px-0.5">
+                  <span class="text-[9px] font-semibold ${isAutoSettlement ? 'text-emerald-700' : 'text-slate-400'}">
+                    ${isAutoSettlement ? 'Auto (Total - DP)' : 'Manual'}
+                  </span>
+                  ${term.manualAmountOverride
+                    ? `<button type="button" onclick="resetPaymentTermAuto(${idx})" class="text-[9px] font-bold text-emerald-700 underline cursor-pointer">Auto</button>`
+                    : ''
+                  }
+                </div>
+              </td>
+              <td class="py-1.5 px-2">
+                <input type="text" placeholder="Opsional" value="${escapeHTML(term.note)}"
+                  oninput="updatePaymentTerm(${idx}, 'note', this.value)"
+                  class="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
+              </td>
+              <td class="py-1.5 px-2 text-center">
+                <button type="button" onclick="togglePaymentTermStatus(${idx})"
+                  class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border transition cursor-pointer ${
+                    isPaid
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-rose-100 text-rose-800 border-rose-300'
+                  }">
+                  ${isPaid ? 'PAID' : 'UNPAID'}
+                </button>
+              </td>
+              <td class="py-1.5 px-2 text-center">
+                <button type="button" onclick="removePaymentTerm(${idx})" title="Hapus Termin"
+                  class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center transition mx-auto">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      updatePaymentTermsSummaryOnly(totals);
+    }
+
+    function syncPaymentTermInputs(proj) {
+      (proj.paymentTerms || []).forEach((term, idx) => {
+        const el = document.querySelector(`[data-term-amount="${idx}"]`);
+        if (el && document.activeElement !== el) {
+          el.value = term.amount ? String(term.amount) : '';
+        }
+      });
+    }
+
+    function updatePaymentTermsSummaryOnly(totals) {
+      document.getElementById('rec-total-rab').textContent = formatRupiah(totals.grandTotal);
+      document.getElementById('rec-total-terms').textContent = formatRupiah(totals.totalTerms);
+
+      const diffBox = document.getElementById('rec-diff-box');
+      const diffAmount = document.getElementById('rec-diff-amount');
+      if (totals.diff === 0) {
+        diffBox.className = 'bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2';
+        diffAmount.className = 'font-extrabold text-emerald-700 tabular-nums';
+        diffAmount.textContent = 'Rp 0 (Sesuai)';
+      } else if (totals.diff > 0) {
+        diffBox.className = 'bg-amber-50 border border-amber-200 rounded-xl px-3 py-2';
+        diffAmount.className = 'font-extrabold text-amber-800 tabular-nums';
+        diffAmount.textContent = `${formatRupiah(totals.diff)} (Kurang)`;
+      } else {
+        diffBox.className = 'bg-rose-50 border border-rose-200 rounded-xl px-3 py-2';
+        diffAmount.className = 'font-extrabold text-rose-700 tabular-nums';
+        diffAmount.textContent = `${formatRupiah(Math.abs(totals.diff))} (Lebih)`;
+      }
+    }
+
+    function renderDocumentPreview(proj, totals) {
+      document.getElementById('doc-company-name').textContent = proj.companyName || 'CV. HAMDI GORDEN MANDIRI';
+      document.getElementById('doc-company-address').textContent = proj.companyAddress || '';
+      document.getElementById('doc-company-phone').textContent = proj.companyPhone || '';
+
+      document.getElementById('doc-project-title').textContent = proj.projectTitle || 'RINCIAN ANGGARAN BIAYA';
+      document.getElementById('doc-client-name').textContent = proj.clientName || '-';
+      document.getElementById('doc-short-date-top').textContent = proj.docNumber || proj.docDate || '-';
+      document.getElementById('doc-bank-date').textContent = proj.docNumber || proj.docDate || '-';
+
+      document.getElementById('doc-bank-warning').textContent = proj.bankWarning || '';
+      document.getElementById('doc-bank-name').textContent = proj.bankName || '-';
+      document.getElementById('doc-bank-account').textContent = proj.bankAccount || '-';
+      document.getElementById('doc-bank-holder').textContent = proj.bankHolder || '-';
+
+      const notesLines = (proj.promoNotes || '')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+      const promoContainer = document.getElementById('doc-promo-notes');
+      promoContainer.innerHTML = notesLines.length
+        ? notesLines.map(line => `<p>${escapeHTML(line)}</p>`).join('')
+        : '<p class="text-slate-400 italic">-</p>';
+
+      const tbody = document.getElementById('doc-table-body');
+      let rowsHTML = '';
+      let itemCounter = 0;
+
+      (proj.groups || []).forEach(grp => {
+        const items = grp.items || [];
+        const groupSub = computeGroupSubtotal(grp);
+
+        if (grp.categoryName) {
+          rowsHTML += `
+            <tr class="bg-slate-100/90 font-bold text-brand-950">
+              <td colspan="8" class="py-1 px-2 border border-slate-400 text-[9.5px] uppercase tracking-wide">
+                ${escapeHTML(grp.categoryName)}
+              </td>
+            </tr>
+          `;
+        }
+
+        items.forEach(itm => {
+          itemCounter += 1;
+          const bahan = computeItemBahan(itm);
+          const sub = computeItemSubtotal(itm);
+          const displayLabel = [itm.name, itm.jenisGorden].filter(Boolean).join(' — ');
+
+          rowsHTML += `
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-1 px-1 text-center border border-slate-400 tabular-nums text-slate-600">${itemCounter}</td>
+              <td class="py-1 px-2 border border-slate-400 font-medium text-slate-900">${escapeHTML(displayLabel || '-')}</td>
+              <td class="py-1 px-1 text-center border border-slate-400 tabular-nums">${itm.panjang ? escapeHTML(itm.panjang) : '-'}</td>
+              <td class="py-1 px-1 text-center border border-slate-400 tabular-nums">${itm.lebar ? escapeHTML(itm.lebar) : '-'}</td>
+              <td class="py-1 px-1.5 text-center border border-slate-400 uppercase text-[9px]">${escapeHTML(itm.ket || '-')}</td>
+              <td class="py-1 px-1.5 text-right border border-slate-400 tabular-nums">${bahan ? formatDecimalID(bahan) : '-'}</td>
+              <td class="py-1 px-2 text-right border border-slate-400 tabular-nums">${itm.unitPrice ? formatRupiah(itm.unitPrice) : '-'}</td>
+              <td class="py-1 px-2 text-right border border-slate-400 tabular-nums font-semibold">${sub ? formatRupiah(sub) : '-'}</td>
+            </tr>
+          `;
+        });
+
+        if (grp.categoryName || items.length > 1) {
+          rowsHTML += `
+            <tr class="bg-slate-50 font-bold text-slate-800">
+              <td colspan="7" class="py-1 px-2 text-right border border-slate-400 text-[9px] uppercase">
+                Subtotal ${escapeHTML(grp.categoryName || 'Kelompok')}
+              </td>
+              <td class="py-1 px-2 text-right border border-slate-400 tabular-nums text-[9.5px]">
+                ${formatRupiah(groupSub)}
+              </td>
+            </tr>
+          `;
+        }
+      });
+
+      if (!rowsHTML) {
+        rowsHTML = `
+          <tr>
+            <td colspan="8" class="py-4 px-2 text-center border border-slate-400 text-slate-400 italic">
+              Belum ada rincian barang/bidang.
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rowsHTML;
+      document.getElementById('doc-footer-total-bahan').textContent = formatDecimalID(totals.totalBahan);
+      document.getElementById('doc-footer-grand-total').textContent = formatRupiah(totals.grandTotal);
+
+      const termsBody = document.getElementById('doc-payment-terms-body');
+      const terms = proj.paymentTerms || [];
+      if (terms.length === 0) {
+        termsBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="py-3 px-2 text-center border border-slate-400 text-slate-400 italic">
+              Belum ada termin pembayaran
+            </td>
+          </tr>
+        `;
+      } else {
+        termsBody.innerHTML = terms.map(t => {
+          const isPaid = t.status === 'PAID';
+          return `
+            <tr>
+              <td class="py-1.5 px-2 border border-slate-400 font-bold uppercase text-slate-900">${escapeHTML(t.label || '-')}</td>
+              <td class="py-1.5 px-2 border border-slate-400 text-right font-bold tabular-nums text-slate-950 whitespace-nowrap">${formatRupiah(t.amount)}</td>
+              <td class="py-1.5 px-1.5 border border-slate-400 text-center text-[8.5px] text-slate-600">${escapeHTML(t.note || '-')}</td>
+              <td class="py-1.5 px-1.5 border border-slate-400 text-center font-extrabold text-[8.5px] ${isPaid ? 'text-emerald-700' : 'text-rose-700'}">
+                ${isPaid ? 'PAID' : 'UNPAID'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+      document.getElementById('doc-termin-total').textContent = formatRupiah(totals.totalTerms);
+
+      document.getElementById('doc-sig-client').textContent = proj.clientName || '____________________';
+      document.getElementById('doc-sig-location').textContent = proj.docLocation || 'Lombok';
+      document.getElementById('doc-sig-date').textContent = proj.docDate || '____________________';
+      document.getElementById('doc-sig-director').textContent = proj.directorName || 'HAMDI';
+    }
+
+    function updatePaymentTerm(idx, field, value) {
+      const proj = getActiveProject();
+      proj.paymentTerms[idx][field] = value;
+      const totals = calculateTotals(proj);
+      saveState();
+      syncPaymentTermInputs(proj);
+      updatePaymentTermsSummaryOnly(totals);
+      renderKPIs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updatePaymentTermLabel(idx, value) {
+      const proj = getActiveProject();
+      const term = proj.paymentTerms[idx];
+      term.label = value;
+      if (isSettlementTerm(term)) {
+        term.manualAmountOverride = false;
+      } else {
+        term.manualAmountOverride = true;
+      }
+      const totals = calculateTotals(proj);
+      saveState();
+      syncPaymentTermInputs(proj);
+      updatePaymentTermsSummaryOnly(totals);
+      renderKPIs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function updatePaymentTermNumber(idx, field, value) {
+      const proj = getActiveProject();
+      const term = proj.paymentTerms[idx];
+      const num = parseFloat(value) || 0;
+      term[field] = num;
+      if (field === 'amount') {
+        term.manualAmountOverride = value !== '';
+      }
+      const totals = calculateTotals(proj);
+      saveState();
+      syncPaymentTermInputs(proj);
+      updatePaymentTermsSummaryOnly(totals);
+      renderKPIs(proj, totals);
+      renderDocumentPreview(proj, totals);
+    }
+
+    function resetPaymentTermAuto(idx) {
+      const proj = getActiveProject();
+      const term = proj.paymentTerms[idx];
+      if (!term) return;
+      term.manualAmountOverride = false;
+      saveState();
+      renderAll();
+    }
+
+    function togglePaymentTermStatus(idx) {
+      const proj = getActiveProject();
+      const term = proj.paymentTerms[idx];
+      if (!term) return;
+      term.status = term.status === 'PAID' ? 'UNPAID' : 'PAID';
+      saveState();
+      renderAll();
+    }
+
+    function addPaymentTerm() {
+      const proj = getActiveProject();
+      proj.paymentTerms = proj.paymentTerms || [];
+      const nextNum = proj.paymentTerms.length + 1;
+      proj.paymentTerms.push({
+        id: 'term-' + Date.now() + '-' + nextNum,
+        label: nextNum === 1 ? 'DP 1' : `TERMIN ${nextNum}`,
+        amount: 0,
+        manualAmountOverride: true,
+        note: '',
+        status: 'UNPAID'
+      });
+      saveState();
+      renderAll();
+      showToast('Baris termin pembayaran ditambahkan.');
+    }
+
+    function addRemainingBalanceTerm() {
+      const proj = getActiveProject();
+      proj.paymentTerms = proj.paymentTerms || [];
+      const hasSettlement = proj.paymentTerms.some(t => isSettlementTerm(t));
+      if (!hasSettlement) {
+        proj.paymentTerms.push({
+          id: 'term-' + Date.now() + '-' + (proj.paymentTerms.length + 1),
+          label: 'PELUNASAN',
+          amount: 0,
+          manualAmountOverride: false,
+          note: '',
+          status: 'UNPAID'
+        });
+      } else {
+        proj.paymentTerms.forEach(t => {
+          if (isSettlementTerm(t)) t.manualAmountOverride = false;
+        });
+      }
+      saveState();
+      renderAll();
+      showToast('Pelunasan disinkronkan otomatis dari Total RAB dikurangi DP.');
+    }
+
+    function removePaymentTerm(idx) {
+      const proj = getActiveProject();
+      if (!proj.paymentTerms) return;
+      proj.paymentTerms.splice(idx, 1);
+      saveState();
+      renderAll();
+    }
+
+    // =========================================================================
+    // 7. PROJECT MANAGEMENT, IMPORT/EXPORT, PRINT & ZOOM
+    // =========================================================================
+    function switchProject(id) {
+      if (!state.projects.some(p => p.id === id)) return;
+      state.activeId = id;
+      saveState();
+      renderAll();
+    }
+
+    function createNewProject(branchKey = 'lombok') {
+      try {
+        const blank = getBlankCompanyProject(branchKey);
+        state.projects.unshift(blank);
+        state.activeId = blank.id;
+        saveState();
+        renderAll();
+        showToast('Proyek RAB baru dibuat.');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal membuat proyek baru.', 'error');
+      }
+    }
+
+    function duplicateCurrentProject() {
+      try {
+        const current = getActiveProject();
+        const now = Date.now();
+        const copy = JSON.parse(JSON.stringify(current));
+        copy.id = 'proj-hgm-' + now;
+        copy.updatedAt = new Date().toISOString();
+        copy.projectTitle = current.projectTitle ? `${current.projectTitle} (Salinan)` : '';
+        state.projects.unshift(copy);
+        state.activeId = copy.id;
+        saveState();
+        renderAll();
+        showToast('Proyek RAB berhasil diduplikat.');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal menduplikat proyek.', 'error');
+      }
+    }
+
+    function resetToBlankTemplate() {
+      try {
+        const current = getActiveProject();
+        const branchKey = (current?.companyAddress || '').toLowerCase().includes('denpasar') ? 'denpasar' : 'lombok';
+        const blank = getBlankCompanyProject(branchKey);
+        const idx = state.projects.findIndex(p => p.id === state.activeId);
+        blank.id = state.activeId;
+        if (idx >= 0) {
+          state.projects[idx] = blank;
+        } else {
+          state.projects.unshift(blank);
+        }
+        saveState();
+        renderAll();
+        showToast('Data proyek dikosongkan (identitas perusahaan & rekening tetap terjaga).');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal mengosongkan data.', 'error');
+      }
+    }
+
+    function deleteProject(id) {
+      if (state.projects.length <= 1) {
+        showToast('Minimal harus ada 1 proyek RAB tersimpan.', 'error');
+        return;
+      }
+      state.projects = state.projects.filter(p => p.id !== id);
+      if (state.activeId === id) {
+        state.activeId = state.projects[0].id;
+      }
+      saveState();
+      renderProjectModalList();
+      renderAll();
+      showToast('Proyek RAB dihapus.');
+    }
+
+    function openProjectModal() {
+      renderProjectModalList();
+      document.getElementById('project-modal').classList.remove('hidden');
+    }
+
+    function closeProjectModal() {
+      document.getElementById('project-modal').classList.add('hidden');
+    }
+
+    function renderProjectModalList() {
+      const container = document.getElementById('project-list-container');
+      container.innerHTML = state.projects.map(p => {
+        const t = calculateTotals(p);
+        const isActive = p.id === state.activeId;
+        const titleText = p.projectTitle || p.clientName || 'RAB Tanpa Judul';
+        return `
+          <div class="p-4 flex flex-wrap items-center justify-between gap-3 ${isActive ? 'bg-brand-50/70' : 'bg-white hover:bg-slate-50'}">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <p class="font-bold text-sm text-brand-950 truncate">${escapeHTML(titleText)}</p>
+                ${isActive ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-900 text-white">Aktif</span>' : ''}
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Klien: <span class="font-semibold text-slate-700">${escapeHTML(p.clientName || '-')}</span> •
+                Bahan: <span class="font-semibold">${formatDecimalID(t.totalBahan)} m²</span> •
+                Total: <span class="font-bold text-brand-900">${formatRupiah(t.grandTotal)}</span>
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="switchProject('${p.id}'); closeProjectModal();" class="px-3 py-1.5 rounded-lg bg-brand-900 hover:bg-brand-800 text-white text-xs font-semibold transition">
+                Buka
+              </button>
+              <button onclick="deleteProject('${p.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function exportProjectJSON() {
+      try {
+        const proj = getActiveProject();
+        const safeName = (proj.clientName || proj.projectTitle || 'RAB').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const blob = new Blob([JSON.stringify(proj, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeName}_RAB.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('File JSON RAB berhasil diunduh.');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal mengekspor JSON.', 'error');
+      }
+    }
+
+    function exportAllProjectsJSON() {
+      try {
+        const blob = new Blob([JSON.stringify(state.projects, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Semua_RAB_CV_Hamdi_Gorden_Mandiri.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Semua proyek RAB berhasil diekspor.');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal mengekspor semua proyek.', 'error');
+      }
+    }
+
+    function importProjectsJSON(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const importedList = Array.isArray(parsed) ? parsed : [parsed];
+          const validList = importedList.filter(item => item && typeof item === 'object');
+          if (validList.length === 0) {
+            showToast('Format file JSON tidak valid.', 'error');
+            return;
+          }
+          validList.forEach((item, idx) => {
+            item.id = 'proj-imp-' + Date.now() + '-' + idx;
+            item.companyName = item.companyName || 'CV. HAMDI GORDEN MANDIRI';
+            item.companyAddress = item.companyAddress || 'Jl. Raya Rengganis Jerneng, Mekar Terongtawah, Kec. Labuapi, Kab. Lombok Barat';
+            item.companyPhone = item.companyPhone || '081803754409 / 087850157493';
+            item.bankName = item.bankName || 'BANK MANDIRI';
+            item.bankAccount = item.bankAccount || '1610002727746';
+            item.bankHolder = item.bankHolder || 'AN. HAMDI';
+            item.bankWarning = item.bankWarning || '*pembayaran hanya menggunakan nama HAMDI';
+            item.paymentTerms = Array.isArray(item.paymentTerms) ? item.paymentTerms : [];
+            item.groups = Array.isArray(item.groups) ? item.groups : [];
+            state.projects.unshift(item);
+          });
+          state.activeId = state.projects[0].id;
+          saveState();
+          renderAll();
+          renderProjectModalList();
+          showToast(`${validList.length} proyek RAB berhasil diimpor.`);
+        } catch (err) {
+          console.error(err);
+          showToast('Gagal membaca file JSON.', 'error');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function printRAB() {
+      const sheet = document.getElementById('rab-document-sheet');
+      const prevTransform = sheet.style.transform;
+      const prevMarginBottom = sheet.style.marginBottom;
+      sheet.style.transform = 'none';
+      sheet.style.marginBottom = '0px';
+      window.print();
+      setTimeout(() => {
+        sheet.style.transform = prevTransform;
+        sheet.style.marginBottom = prevMarginBottom;
+      }, 300);
+    }
+
+    // =========================================================================
+    // 8. VIEW MODE, ZOOM & UI HELPERS
+    // =========================================================================
+    let currentViewMode = 'split';
+    let currentZoom = null;
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const editor = document.getElementById('editor-panel');
+      const preview = document.getElementById('preview-panel');
+      const grid = document.getElementById('workspace-grid');
+
+      ['split', 'editor', 'preview'].forEach(m => {
+        const btn = document.getElementById('btn-mode-' + m);
+        if (!btn) return;
+        if (m === mode) {
+          btn.classList.add('bg-brand-700', 'text-white', 'shadow');
+          btn.classList.remove('text-slate-300');
+        } else {
+          btn.classList.remove('bg-brand-700', 'text-white', 'shadow');
+          btn.classList.add('text-slate-300');
+        }
+      });
+
+      if (mode === 'editor') {
+        editor.classList.remove('hidden');
+        preview.classList.add('hidden');
+        grid.className = 'grid grid-cols-1 gap-6 items-start';
+      } else if (mode === 'preview') {
+        editor.classList.add('hidden');
+        preview.classList.remove('hidden');
+        grid.className = 'grid grid-cols-1 gap-6 items-start';
+      } else {
+        editor.classList.remove('hidden');
+        preview.classList.remove('hidden');
+        grid.className = 'grid grid-cols-1 xl:grid-cols-12 gap-6 items-start';
+      }
+
+      setTimeout(fitA4ToScreen, 50);
+    }
+
+    function setZoom(scale) {
+      currentZoom = Math.max(0.35, Math.min(1.5, scale));
+      applyZoom();
+    }
+
+    function adjustZoom(delta) {
+      const base = currentZoom !== null ? currentZoom : computeFitScale();
+      setZoom(base + delta);
+    }
+
+    function fitA4ToScreen() {
+      currentZoom = null;
+      applyZoom();
+    }
+
+    function computeFitScale() {
+      const wrapper = document.getElementById('a4-outer-wrapper');
+      if (!wrapper) return 1;
+      const availableWidth = wrapper.clientWidth - 16;
+      const a4PxWidth = 210 * 3.7795275591;
+      if (availableWidth <= 0) return 1;
+      return Math.min(1, availableWidth / a4PxWidth);
+    }
+
+    function applyZoom() {
+      const sheet = document.getElementById('rab-document-sheet');
+      const label = document.getElementById('zoom-label');
+      if (!sheet) return;
+      const scale = currentZoom !== null ? currentZoom : computeFitScale();
+      const a4PxHeight = 297 * 3.7795275591;
+      sheet.style.transform = `scale(${scale})`;
+      sheet.style.marginBottom = `${(scale - 1) * a4PxHeight}px`;
+      if (label) {
+        label.textContent = currentZoom === null ? `Fit (${Math.round(scale * 100)}%)` : `${Math.round(scale * 100)}%`;
+      }
+    }
+
+    function scrollToSection(id) {
+      if (currentViewMode === 'preview') {
+        setViewMode(window.innerWidth >= 1280 ? 'split' : 'editor');
+      }
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const isError = type === 'error';
+      toast.className = `px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 border transition-all ${
+        isError
+          ? 'bg-rose-900 text-white border-rose-700'
+          : 'bg-brand-950 text-white border-brand-800'
+      }`;
+      toast.innerHTML = `
+        <i class="fa-solid ${isError ? 'fa-circle-exclamation text-rose-300' : 'fa-circle-check text-emerald-400'}"></i>
+        <span>${escapeHTML(message)}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 250);
+      }, 2600);
+    }
+
+    // =========================================================================
+    // 9. INITIALIZATION ON WINDOW LOAD
+    // =========================================================================
+    window.addEventListener('resize', () => {
+      if (currentZoom === null) {
+        applyZoom();
+      }
+    });
+
+    window.onload = function () {
+      try {
+        initState();
+        renderAll();
+        fitA4ToScreen();
+      } catch (err) {
+        console.error('Initialization error:', err);
+        showToast('Terjadi kesalahan saat memuat aplikasi.', 'error');
+      }
+    };
+  </script>
+</body>
+</html>
